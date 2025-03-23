@@ -2,13 +2,16 @@ import streamlit as st
 from docx import Document
 import gspread
 from google.oauth2.service_account import Credentials
+import json
 
 # Google Sheets Setup
 SHEET_NAME = "nogra-chemlab"  # Change this to your Google Sheet name
 
 # Load Google Sheets credentials
-scope = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
-creds = Credentials.from_service_account_file("nogra-chemlab-28be1f2374ab.json", scopes=scope)  # Update with your JSON key
+creds_dict = json.loads(st.secrets["google"]["credentials"])
+creds = Credentials.from_service_account_info(creds_dict)
+
+# Authorize Google Sheets
 client = gspread.authorize(creds)
 
 # Open the Google Sheet
