@@ -23,9 +23,9 @@ except Exception as e:
 st.title("Lab Results Entry System")
 
 # Input Fields
-lab_number = st.text_input("Lab Number")
-sample_number = st.text_input("Sample Number")
-sample_description = st.text_area("Sample Description")
+lab_number = st.text_input("Lab Number", key="lab_number")
+sample_number = st.text_input("Sample Number", key="sample_number")
+sample_description = st.text_area("Sample Description", key="sample_description")
 
 st.subheader("Summary of Results")
 
@@ -37,19 +37,19 @@ predefined_parameters = [
 ]
 
 # Let users select multiple parameters
-selected_parameters = st.multiselect("Select Parameters", predefined_parameters)
+selected_parameters = st.multiselect("Select Parameters", predefined_parameters, key="selected_parameters")
 
 parameters = []
 for param in selected_parameters:
     parameters.append(
         {
             "Parameter": param,
-            "Date Started": st.date_input(f"Date Started ({param})").strftime("%Y-%m-%d"),
-            "Environmental Conditions": st.text_input(f"Environmental Conditions ({param})"),
-            "Method Used": st.text_input(f"Method Used ({param})"),
-            "Results": st.text_input(f"Results ({param})"),
-            "Uncertainty": st.text_input(f"Uncertainty ({param})"),
-            "Unit": st.text_input(f"Unit ({param})"),
+            "Date Started": st.date_input(f"Date Started ({param})", key=f"date_{param}").strftime("%Y-%m-%d"),
+            "Environmental Conditions": st.text_input(f"Environmental Conditions ({param})", key=f"env_{param}"),
+            "Method Used": st.text_input(f"Method Used ({param})", key=f"method_{param}"),
+            "Results": st.text_input(f"Results ({param})", key=f"results_{param}"),
+            "Uncertainty": st.text_input(f"Uncertainty ({param})", key=f"uncertainty_{param}"),
+            "Unit": st.text_input(f"Unit ({param})", key=f"unit_{param}"),
         }
     )
 
@@ -104,17 +104,36 @@ def generate_report():
 
     return report_filename
 
+# Validate required fields
+def validate_fields():
+    if not lab_number or not sample_number or not sample_description:
+        return False, "Lab Number, Sample Number, and Sample Description are required."
+    
+    if not selected_parameters:
+        return False, "At least one parameter must be selected."
+    
+    for param in parameters:
+        if not param["Date Started"] or not param["Method Used"] or not param["Results"] or not param["Unit"]:
+            return False, f"All fields must be filled for parameter {param['Parameter']}."
+    
+    return True, ""
+
 # Save to Google Sheet & Generate Report Button
 if st.button("Save to Tracker & Generate Report"):
-    google_sheet_status = update_google_sheet()
-    file_path = generate_report()
-    st.success(google_sheet_status)
-    st.success("Report generated successfully!")
+    is_valid, error_message = validate_fields()
+    
+    if is_valid:
+        google_sheet_status = update_google_sheet()
+        file_path = generate_report()
+        st.success(google_sheet_status)
+        st.success("Report generated successfully!")
 
-    with open(file_path, "rb") as file:
-        st.download_button(
-            "Download Report",
-            file,
-            file_path,
-            "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-        )
+        with open(file_path, "rb") as file:
+            st.download_button(
+                "Download Report",
+                file,
+                file_path,
+                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+            )
+    else:
+        st.error(error_message)
